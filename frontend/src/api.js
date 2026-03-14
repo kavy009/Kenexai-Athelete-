@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5000';
+const BASE = '';
 
 async function fetchJSON(url) {
   const res = await fetch(`${BASE}${url}`);

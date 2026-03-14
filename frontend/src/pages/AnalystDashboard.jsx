@@ -5,7 +5,15 @@ import {
     LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#3b82f6'];
+const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#4f6ef7', '#6c5ce7', '#3b82f6'];
+const getChartTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        tooltip: { background: isDark ? '#1c1e2a' : '#ffffff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e5ed', borderRadius: 8, color: isDark ? '#f0f1f5' : '#1a1d26' },
+        grid: isDark ? 'rgba(255,255,255,0.06)' : '#e8eaef',
+        axis: isDark ? '#6b7084' : '#8b91a5',
+    };
+};
 
 export default function AnalystDashboard() {
     const [data, setData] = useState(null);
@@ -39,6 +47,7 @@ export default function AnalystDashboard() {
     if (!data) return <div className="loading-container"><div className="spinner" /><p>Loading analyst dashboard...</p></div>;
 
     const summary = data.summary || {};
+    const ct = getChartTheme();
     const resultData = Object.entries(data.result_distribution || {}).map(([k, v]) => ({ name: k, value: v }));
 
     return (
@@ -61,12 +70,12 @@ export default function AnalystDashboard() {
                     {(data.goals_by_season || []).length > 0 && (
                         <ResponsiveContainer width="100%" height={280}>
                             <LineChart data={data.goals_by_season}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="season" stroke="#64748b" fontSize={10} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
-                                <Line type="monotone" dataKey="avg_goals" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} name="Avg Goals" />
-                                <Line type="monotone" dataKey="avg_home_goals" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 2 }} name="Avg Home" />
+                                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                <XAxis dataKey="season" stroke={ct.axis} fontSize={10} />
+                                <YAxis stroke={ct.axis} fontSize={11} />
+                                <Tooltip contentStyle={ct.tooltip} />
+                                <Line type="monotone" dataKey="avg_goals" stroke="#4f6ef7" strokeWidth={2} dot={{ fill: '#4f6ef7', r: 3 }} name="Avg Goals" />
+                                <Line type="monotone" dataKey="avg_home_goals" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e', r: 2 }} name="Avg Home" />
                                 <Line type="monotone" dataKey="avg_away_goals" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', r: 2 }} name="Avg Away" />
                                 <Legend />
                             </LineChart>
@@ -83,7 +92,7 @@ export default function AnalystDashboard() {
                                     label={({ name, value }) => `${name}: ${value.toLocaleString()}`}>
                                     {resultData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <Tooltip contentStyle={ct.tooltip} />
                             </PieChart>
                         </ResponsiveContainer>
                     )}
@@ -96,11 +105,11 @@ export default function AnalystDashboard() {
                     {(data.top_scoring_teams || []).length > 0 && (
                         <ResponsiveContainer width="100%" height={350}>
                             <BarChart data={data.top_scoring_teams} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis type="number" stroke="#64748b" fontSize={11} />
-                                <YAxis type="category" dataKey="team_long_name" stroke="#64748b" fontSize={10} width={140} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
-                                <Bar dataKey="goals" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                <XAxis type="number" stroke={ct.axis} fontSize={11} />
+                                <YAxis type="category" dataKey="team_long_name" stroke={ct.axis} fontSize={10} width={140} />
+                                <Tooltip contentStyle={ct.tooltip} />
+                                <Bar dataKey="goals" fill="#4f6ef7" radius={[0, 4, 4, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}

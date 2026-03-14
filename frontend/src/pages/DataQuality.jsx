@@ -6,7 +6,16 @@ import {
     AreaChart, Area
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const COLORS = ['#4f6ef7', '#6c5ce7', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const getChartTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        tooltip: { background: isDark ? '#1c1e2a' : '#ffffff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e5ed', borderRadius: 8, color: isDark ? '#f0f1f5' : '#1a1d26' },
+        grid: isDark ? 'rgba(255,255,255,0.06)' : '#e8eaef',
+        axis: isDark ? '#6b7084' : '#8b91a5',
+        polar: isDark ? 'rgba(255,255,255,0.08)' : '#e8eaef',
+    };
+};
 
 export default function DataQuality() {
     const [quality, setQuality] = useState(null);
@@ -23,6 +32,7 @@ export default function DataQuality() {
     const tables = Object.entries(quality).filter(([k]) => k !== 'outliers');
     const totalRows = tables.reduce((s, [, v]) => s + v.rows, 0);
     const avgCompleteness = (tables.reduce((s, [, v]) => s + v.completeness, 0) / tables.length).toFixed(1);
+    const ct = getChartTheme();
 
     return (
         <div>
@@ -126,11 +136,11 @@ export default function DataQuality() {
                         <div className="card-header"><div className="card-title">Overall Rating Distribution</div></div>
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={Object.entries(eda.rating_distribution || {}).map(([k, v]) => ({ rating: k, count: v }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="rating" stroke="#64748b" fontSize={11} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
-                                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                <XAxis dataKey="rating" stroke={ct.axis} fontSize={11} />
+                                <YAxis stroke={ct.axis} fontSize={11} />
+                                <Tooltip contentStyle={ct.tooltip} />
+                                <Bar dataKey="count" fill="#4f6ef7" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -142,7 +152,7 @@ export default function DataQuality() {
                                 <Pie data={Object.entries(eda.preferred_foot || {}).map(([k, v]) => ({ name: k, value: v }))} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                                     {Object.keys(eda.preferred_foot || {}).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <Tooltip contentStyle={ct.tooltip} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -151,17 +161,17 @@ export default function DataQuality() {
                         <div className="card-header"><div className="card-title">Goals per Match by Season</div></div>
                         <ResponsiveContainer width="100%" height={280}>
                             <AreaChart data={Object.entries(eda.match_stats?.goals_by_season || {}).map(([k, v]) => ({ season: k, avg: v }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="season" stroke="#64748b" fontSize={10} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                <XAxis dataKey="season" stroke={ct.axis} fontSize={10} />
+                                <YAxis stroke={ct.axis} fontSize={11} />
+                                <Tooltip contentStyle={ct.tooltip} />
                                 <defs>
                                     <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                                        <stop offset="0%" stopColor="#4f6ef7" stopOpacity={0.3} />
+                                        <stop offset="100%" stopColor="#4f6ef7" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <Area type="monotone" dataKey="avg" stroke="#6366f1" fill="url(#areaGrad)" strokeWidth={2} />
+                                <Area type="monotone" dataKey="avg" stroke="#4f6ef7" fill="url(#areaGrad)" strokeWidth={2} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -177,7 +187,7 @@ export default function DataQuality() {
                                 ]} cx="50%" cy="50%" outerRadius={100} innerRadius={50} dataKey="value" label={({ name, value }) => `${name}: ${value}%`}>
                                     <Cell fill="#10b981" /><Cell fill="#f59e0b" /><Cell fill="#ef4444" />
                                 </Pie>
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <Tooltip contentStyle={ct.tooltip} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>

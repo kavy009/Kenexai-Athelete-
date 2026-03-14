@@ -38,6 +38,10 @@ export default function Players() {
         { skill: 'Overall', value: playerDetail.overall_rating || 0 },
         { skill: 'Potential', value: playerDetail.potential || 0 },
     ] : [];
+    const ct = (() => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return { polar: isDark ? 'rgba(255,255,255,0.08)' : '#e8eaef', axis: isDark ? '#6b7084' : '#8b91a5' };
+    })();
 
     return (
         <div>
@@ -114,10 +118,10 @@ export default function Players() {
                         </div>
                         <ResponsiveContainer width="100%" height={260}>
                             <RadarChart data={radarData}>
-                                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                <PolarAngleAxis dataKey="skill" stroke="#94a3b8" fontSize={11} />
+                                <PolarGrid stroke={ct.polar} />
+                                <PolarAngleAxis dataKey="skill" stroke={ct.axis} fontSize={11} />
                                 <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                                <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
+                                <Radar dataKey="value" stroke="#4f6ef7" fill="#4f6ef7" fillOpacity={0.3} strokeWidth={2} />
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>

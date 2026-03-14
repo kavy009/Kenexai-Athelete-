@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import DataQuality from './pages/DataQuality';
 import CoachDashboard from './pages/CoachDashboard';
@@ -20,9 +21,18 @@ const navItems = [
 ];
 
 function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('athleteiq-theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('athleteiq-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
   return (
     <BrowserRouter>
-      <div className="app-layout">
+      <div className="app-layout" data-theme={theme}>
         <aside className="sidebar">
           <div className="sidebar-logo">
             <h1>⚽ AthleteIQ</h1>
@@ -44,9 +54,14 @@ function App() {
               )
             )}
           </nav>
-          <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--text-muted)' }}>
+          <div style={{ padding: '12px 14px', borderTop: '1px solid var(--sidebar-border)' }}>
+            <button className="theme-toggle-btn" onClick={toggleTheme}>
+              {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+            </button>
+          </div>
+          <div style={{ padding: '10px 18px 16px', borderTop: '1px solid var(--sidebar-border)', fontSize: 11, color: 'var(--text-muted)' }}>
             <div>Powered by ML & GenAI</div>
-            <div style={{ marginTop: 4 }}>11,060 Players · 25,979 Matches</div>
+            <div style={{ marginTop: 3 }}>11,060 Players · 25,979 Matches</div>
           </div>
         </aside>
         <main className="main-content">

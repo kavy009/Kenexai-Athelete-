@@ -1,0 +1,27 @@
+services:
+  # Backend - Python Flask API
+  - type: web
+    name: kenexai-athlete-backend
+    runtime: docker
+    dockerfilePath: ./docker-backend/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/leagues
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GIT_LFS_ENABLED
+        value: "1"
+
+  # Frontend - React (Nginx)
+  - type: web
+    name: kenexai-athlete-frontend
+    runtime: docker
+    dockerfilePath: ./docker-frontend/Dockerfile.render
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: BACKEND_URL
+        value: https://kenexai-athlete-backend.onrender.com

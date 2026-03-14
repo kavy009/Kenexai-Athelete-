@@ -5,7 +5,16 @@ import {
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const COLORS = ['#4f6ef7', '#6c5ce7', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const getChartTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        tooltip: { background: isDark ? '#1c1e2a' : '#ffffff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e5ed', borderRadius: 8, color: isDark ? '#f0f1f5' : '#1a1d26' },
+        grid: isDark ? 'rgba(255,255,255,0.06)' : '#e8eaef',
+        axis: isDark ? '#6b7084' : '#8b91a5',
+        polar: isDark ? 'rgba(255,255,255,0.08)' : '#e8eaef',
+    };
+};
 
 export default function ScoutDashboard() {
     const [data, setData] = useState(null);
@@ -177,10 +186,10 @@ export default function ScoutDashboard() {
                                             const keys = ['attack_score', 'midfield_score', 'defense_score', 'physical_score', 'overall_rating', 'potential'];
                                             return { skill: s, p1: comparePlayers[0][keys[i]] || 0, p2: comparePlayers[1][keys[i]] || 0 };
                                         })}>
-                                            <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                            <PolarAngleAxis dataKey="skill" stroke="#94a3b8" fontSize={11} />
+                                            <PolarGrid stroke={getChartTheme().polar} />
+                                            <PolarAngleAxis dataKey="skill" stroke={getChartTheme().axis} fontSize={11} />
                                             <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                                            <Radar name={comparePlayers[0].player_name} dataKey="p1" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
+                                            <Radar name={comparePlayers[0].player_name} dataKey="p1" stroke="#4f6ef7" fill="#4f6ef7" fillOpacity={0.2} />
                                             <Radar name={comparePlayers[1].player_name} dataKey="p2" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
                                             <Legend />
                                         </RadarChart>

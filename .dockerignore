@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node modules
+frontend/node_modules/
+frontend/dist/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Python
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/venv/
+backend/.env
+backend/.pytest_cache/
+
+# Databases
+# We avoid ignoring the entire SQLite file if it's meant to be built in manually,
+# but usually it's best to rely entirely on volume mappings.
+# (Leaving database.sqlite out of .dockerignore so COPY works in Dockerfile for standalone use)
+
+# VS Code / IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
