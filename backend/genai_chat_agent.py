@@ -1,90 +1,27 @@
 """
-GenAI Chat Agent — Advanced Sports Analyst Assistant
-Professional-grade NLP with intent detection, data retrieval, ML execution,
-and sports analyst-style insight generation.
+GenAI Chat Agent — Generative AI Sports Analyst Assistant
+Multi-turn conversational AI with NLP understanding, pronoun resolution,
+context tracking, and professional analyst-style insight generation.
 """
 import re
 import random
 import pandas as pd
 import numpy as np
+from conversation_context import ConversationContext
+from nlp_intent_engine import NLPIntentEngine
 
 
-ANALYST_INTENTS = [
-    # Player analysis
-    {'intent': 'player_profile', 'patterns': [
-        r'(?:tell me about|profile|info|details|who is|show me) (.+)',
-        r'(?:analyse|analyze|analysis of|analyze|assessment of) (.+)',
-    ]},
-    # Injury risk
-    {'intent': 'injury_risk', 'patterns': [
-        r'(?:injury|injured|injury risk|injury prediction|risk of injury)(?: for| of)? (.+)',
-        r'(?:will|is|could) (.+?) (?:get injured|be injured|injury)',
-        r'(?:explain|why) (.+?) (?:has |is )?(?:high|injury) risk',
-    ]},
-    # Fatigue
-    {'intent': 'fatigue', 'patterns': [
-        r'(?:fatigue|tired|exhausted|fatigue trends?|fatigue level)(?: for| of)? (.+)',
-        r'(?:show|get) fatigue (?:for|of|trends?) (.+)',
-        r'(.+?) fatigue',
-    ]},
-    # Top players / rankings
-    {'intent': 'top_players', 'patterns': [
-        r'(?:top|best|highest|leading) (\d+)? ?(?:players?|performers?)(?: (?:by|in|with|for) (.+))?',
-        r'(?:who are|show me) (?:the )?(?:top|best) (.+)',
-        r'(?:player|performance) (?:rankings?|leaderboard)',
-    ]},
-    # Declining players
-    {'intent': 'declining_players', 'patterns': [
-        r'(?:declining|decreasing|dropping|falling|worsening) (?:performance|players?|rating)',
-        r'(?:players?|who) (?:are|show|with) (?:declining|dropping|decreasing)',
-        r'performance (?:decline|drop)',
-    ]},
-    # Improving players
-    {'intent': 'improving_players', 'patterns': [
-        r'(?:improving|rising|growing|developing|promising) (?:players?|performance)',
-        r'(?:players?|who) (?:are|show|with) (?:improving|rising|getting better)',
-    ]},
-    # Comparison
-    {'intent': 'compare', 'patterns': [
-        r'compare (.+?) (?:vs?\.?|versus|against|and|with) (.+)',
-        r'(.+?) (?:vs?\.?|versus|against) (.+)',
-    ]},
-    # Lineup / team recommendation
-    {'intent': 'lineup', 'patterns': [
-        r'(?:recommend|suggest|optimal|best|starting) (?:lineup|xi|eleven|team|formation)(?: for (.+))?',
-        r'(?:lineup|starting|formation) (?:for|recommendation) (.+)',
-    ]},
-    # Match prediction
-    {'intent': 'match_prediction', 'patterns': [
-        r'(?:predict|prediction|forecast) (.+?) (?:vs?\.?|versus|against) (.+)',
-        r'(.+?) (?:vs?\.?|versus|against) (.+?) (?:prediction|result|outcome)',
-        r'(?:who will win|who wins) (.+?) (?:vs?\.?|or|against) (.+)',
-    ]},
-    # Anomalies
-    {'intent': 'anomalies', 'patterns': [
-        r'(?:anomal|unusual|abnormal|irregular|strange|weird)',
-        r'(?:detect|find|show) (?:anomal|unusual|outlier)',
-    ]},
-    # Team info
-    {'intent': 'team_info', 'patterns': [
-        r'(?:tell me about|info|details|analysis)(?: team| on)? team (.+)',
-        r'(.+?) (?:team|squad|roster) (?:info|details|analysis)',
-    ]},
-    # Stats / general
-    {'intent': 'statistics', 'patterns': [
-        r'(?:overall |general )?(?:stats?|statistics|numbers|overview|summary|dashboard)',
-        r'(?:how many|count|total) (?:players?|matches?|teams?|goals?)',
-    ]},
-    # Head-to-head
-    {'intent': 'head_to_head', 'patterns': [
-        r'(?:head to head|h2h|history|record) (.+?) (?:vs?\.?|versus|against|and) (.+)',
-        r'(?:matches?|games?) (?:between|of) (.+?) (?:and|vs?\.?) (.+)',
-    ]},
-    # Coaching advice
-    {'intent': 'coaching', 'patterns': [
-        r'(?:coaching|training|development|improve|improvement) (?:advice|plan|recommendation|tips?)(?: for (.+))?',
-        r'(?:how (?:to|can)|ways to) (?:improve|develop|train) (.+)',
-    ]},
+# Greeting responses pool
+GREETINGS = [
+    "Hello! 👋 I'm your AthleteIQ Sports Analyst. I can analyze player performance, predict injuries, compare players, recommend lineups, and much more. What would you like to know?",
+    "Hi there! ⚽ Welcome to AthleteIQ. I'm ready to analyze any player, team, or match data you're interested in. Just ask me anything!",
+    "Hey! 🤖 I'm your AI sports analyst assistant. Think of me as your personal data analyst working for a top football club. What can I help you with today?",
+]
+
+THANKS_RESPONSES = [
+    "You're welcome! 😊 Feel free to ask anything else about player performance, injuries, or match analytics.",
+    "Glad I could help! 👍 I'm here whenever you need more analysis or insights.",
+    "Anytime! ⚽ Let me know if you want to dive deeper into any player or team data.",
 ]
 
 
@@ -100,28 +37,34 @@ class GenAIChatAgent:
         self.anomaly_detector = anomaly_detector
         self.lineup_optimizer = lineup_optimizer
         self.chart_generator = chart_generator
-        self.conversation_history = []
+        self.context = ConversationContext()
+        self.nlp = NLPIntentEngine()
 
     def process_message(self, message):
-        """Main entry point — process user message and generate analyst response"""
-        self.conversation_history.append({'role': 'user', 'message': message})
+        """Main entry — NLP understanding → pronoun resolution → dispatch → response"""
+        # Step 1: Resolve pronouns using conversation context
+        resolved = self.context.resolve_pronouns(message)
+        self.context.add_turn('user', message)
 
-        intent, entities = self._detect_intent(message)
-        response = self._dispatch(intent, entities, message)
+        # Step 2: NLP intent understanding with context
+        understanding = self.nlp.understand(resolved, self.context)
+        intent = understanding['intent']
+        entities = understanding['entities']
+        confidence = understanding['confidence']
 
-        self.conversation_history.append({'role': 'assistant', 'response': response})
+        # Step 3: For low-confidence, try to find player name in message
+        if confidence < 0.3 and intent == 'general':
+            player_id = self._find_player_id_from_text(resolved)
+            if player_id:
+                intent = 'player_profile'
+
+        # Step 4: Dispatch to handler
+        response = self._dispatch(intent, entities, resolved)
+
+        # Step 5: Track context
+        self.context.add_turn('assistant', response.get('message', ''),
+                              intent=intent, entities=entities)
         return response
-
-    def _detect_intent(self, message):
-        msg = message.lower().strip()
-
-        for intent_def in ANALYST_INTENTS:
-            for pattern in intent_def['patterns']:
-                match = re.search(pattern, msg, re.IGNORECASE)
-                if match:
-                    return intent_def['intent'], match.groups()
-
-        return 'general', ()
 
     def _dispatch(self, intent, entities, message):
         handlers = {
@@ -139,6 +82,9 @@ class GenAIChatAgent:
             'statistics': self._handle_statistics,
             'head_to_head': self._handle_head_to_head,
             'coaching': self._handle_coaching,
+            'greeting': self._handle_greeting,
+            'thanks': self._handle_thanks,
+            'help': self._handle_help,
         }
 
         handler = handlers.get(intent, self._handle_general)
@@ -152,6 +98,9 @@ class GenAIChatAgent:
     def _handle_player_profile(self, entities, message):
         name = self._extract_player_name(entities, message)
         player_id = self._find_player_id(name)
+        if player_id:
+            self.context.last_player = name
+            self.context.last_player_id = player_id
         if not player_id:
             return self._player_not_found(name)
 
@@ -214,6 +163,9 @@ class GenAIChatAgent:
     def _handle_injury_risk(self, entities, message):
         name = self._extract_player_name(entities, message)
         player_id = self._find_player_id(name)
+        if player_id:
+            self.context.last_player = name
+            self.context.last_player_id = player_id
         if not player_id:
             return self._player_not_found(name)
 
@@ -330,19 +282,9 @@ class GenAIChatAgent:
             }
 
     def _handle_top_players(self, entities, message):
-        n = 10
-        metric = 'performance_score'
-        for e in entities:
-            if e and e.isdigit():
-                n = min(int(e), 25)
-            elif e:
-                attr_map = {
-                    'attack': 'attack_score', 'defense': 'defense_score', 'midfield': 'midfield_score',
-                    'physical': 'physical_score', 'rating': 'overall_rating', 'overall': 'overall_rating',
-                    'potential': 'potential', 'performance': 'performance_score', 'speed': 'sprint_speed',
-                    'stamina': 'stamina', 'finishing': 'finishing', 'dribbling': 'dribbling',
-                }
-                metric = attr_map.get(e.strip().lower(), metric)
+        n = entities.get('count', 10) if isinstance(entities, dict) else 10
+        metric = entities.get('metric', 'performance_score') if isinstance(entities, dict) else 'performance_score'
+        n = min(n, 25)
 
         perf = self.etl.gold['fact_player_performance']
         top = perf.nlargest(n, metric)
@@ -405,11 +347,25 @@ class GenAIChatAgent:
         }
 
     def _handle_compare(self, entities, message):
-        if len(entities) < 2:
+        # Extract from dict entities or tuple
+        if isinstance(entities, dict):
+            name1 = entities.get('entity1', '')
+            name2 = entities.get('entity2', '')
+        elif len(entities) >= 2:
+            name1 = entities[0].strip().rstrip('?.,! ') if entities[0] else ''
+            name2 = entities[1].strip().rstrip('?.,! ') if entities[1] else ''
+        else:
+            # If only one name given, compare with context player
+            one_name = self._extract_player_name(entities, message)
+            if self.context.last_player and one_name:
+                name1 = self.context.last_player
+                name2 = one_name
+            else:
+                return self._error_response("Please specify two players to compare (e.g., 'Compare Messi vs Ronaldo')")
+
+        if not name1 or not name2:
             return self._error_response("Please specify two players to compare (e.g., 'Compare Messi vs Ronaldo')")
 
-        name1 = entities[0].strip().rstrip('?.,! ')
-        name2 = entities[1].strip().rstrip('?.,! ')
         id1 = self._find_player_id(name1)
         id2 = self._find_player_id(name2)
 
@@ -467,16 +423,12 @@ class GenAIChatAgent:
         }
 
     def _handle_lineup(self, entities, message):
-        team_name = None
-        formation = '4-3-3'
+        team_name = entities.get('entity1') if isinstance(entities, dict) else None
+        formation = entities.get('formation', '4-3-3') if isinstance(entities, dict) else '4-3-3'
 
-        for e in entities:
-            if e:
-                e = e.strip().rstrip('?.,!')
-                if e in FORMATIONS if hasattr(self, '_') else e in ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '3-4-3']:
-                    formation = e
-                else:
-                    team_name = e
+        # Try extracting team from message
+        if not team_name:
+            team_name = self._extract_team_name(message)
 
         # Extract formation from message
         for f in ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '3-4-3']:
@@ -527,11 +479,17 @@ class GenAIChatAgent:
         }
 
     def _handle_match_prediction(self, entities, message):
-        if len(entities) < 2:
+        if isinstance(entities, dict):
+            team1 = entities.get('entity1', '')
+            team2 = entities.get('entity2', '')
+        elif len(entities) >= 2:
+            team1 = entities[0].strip().rstrip('?.,! ') if entities[0] else ''
+            team2 = entities[1].strip().rstrip('?.,! ') if entities[1] else ''
+        else:
             return self._error_response("Please specify two teams (e.g., 'Predict Barcelona vs Real Madrid')")
 
-        team1 = entities[0].strip().rstrip('?.,! ')
-        team2 = entities[1].strip().rstrip('?.,! ')
+        if not team1 or not team2:
+            return self._error_response("Please specify two teams (e.g., 'Predict Barcelona vs Real Madrid')")
 
         # Find team IDs
         teams = self.etl.gold['dim_team']
@@ -657,9 +615,43 @@ class GenAIChatAgent:
         }
 
     def _handle_head_to_head(self, entities, message):
-        if len(entities) < 2:
-            return self._error_response("Please specify two teams")
         return self._handle_match_prediction(entities, message)
+
+    def _handle_greeting(self, entities, message):
+        return {
+            'type': 'greeting',
+            'message': random.choice(GREETINGS),
+            'suggestions': ['Top 10 players', 'Show stats overview', 'Detect anomalies', 'Compare Messi vs Ronaldo', 'Who are the best attackers?']
+        }
+
+    def _handle_thanks(self, entities, message):
+        return {
+            'type': 'thanks',
+            'message': random.choice(THANKS_RESPONSES),
+            'suggestions': ['Top 10 players', 'Show declining players', 'Detect anomalies']
+        }
+
+    def _handle_help(self, entities, message):
+        msg = """## 🤖 AthleteIQ AI Sports Analyst\n\nI'm your professional sports analytics assistant. Here's what I can do:\n\n"""
+        msg += "### 🔍 Player Intelligence\n- **\"Tell me about Messi\"** — Full performance breakdown with radar charts\n"
+        msg += "- **\"Is Neymar at risk of injury?\"** — Explainable injury prediction\n"
+        msg += "- **\"Show fatigue for Hazard\"** — Biometric fatigue analysis\n"
+        msg += "- **\"Coaching plan for Ronaldo\"** — Personalized development plan\n\n"
+        msg += "### ⚔️ Comparisons & Rankings\n- **\"Compare Messi vs Ronaldo\"** — Side-by-side analysis with radar overlay\n"
+        msg += "- **\"Top 10 players by attack\"** — Flexible leaderboards\n"
+        msg += "- **\"Show declining players\"** — Trend detection\n\n"
+        msg += "### ⚽ Team & Match\n- **\"Predict Barcelona vs Real Madrid\"** — Match outcome forecast\n"
+        msg += "- **\"Recommend lineup for Barcelona\"** — AI-optimized starting XI\n"
+        msg += "- **\"Detect anomalies\"** — Isolation Forest anomaly scan\n\n"
+        msg += "### 💬 Conversational\nI support **follow-up questions**! After asking about a player, you can say:\n"
+        msg += "- \"What about his injury risk?\" — I'll know who you mean\n"
+        msg += "- \"Compare him with Ronaldo\" — Context-aware comparison\n"
+        msg += "- \"How can he improve?\" — Coaching plan for the same player\n"
+        return {
+            'type': 'help',
+            'message': msg,
+            'suggestions': ['Tell me about Messi', 'Top 10 players', 'Detect anomalies', 'Show stats overview', 'Who are the best attackers?']
+        }
 
     def _handle_coaching(self, entities, message):
         name = self._extract_player_name(entities, message)
@@ -752,61 +744,138 @@ class GenAIChatAgent:
         }
 
     def _handle_general(self, entities, message):
-        # Try data engine as fallback
-        result = self.data_engine.query(message)
-        if result and result.get('type') != 'no_results':
-            msg = self._format_data_result(result)
-            return {
-                'type': result['type'],
-                'message': msg,
-                'data': result.get('data'),
-                'suggestions': ["Show stats overview", "Top 10 players", "Detect anomalies", "Squad fatigue"]
-            }
+        # Step 1: Try data engine for SQL-like queries
+        try:
+            result = self.data_engine.query(message)
+            if result and result.get('type') not in ('no_results', None):
+                msg = self._format_data_result(result)
+                return {
+                    'type': result['type'],
+                    'message': msg,
+                    'data': result.get('data'),
+                    'suggestions': ["Show stats overview", "Top 10 players", "Detect anomalies"]
+                }
+        except Exception:
+            pass
 
-        # Truly unknown query
-        return {
-            'type': 'help',
-            'message': "## 🤖 AthleteIQ Sports Analyst\n\nI can help you with:\n\n"
-                       "- 🔍 **Player Analysis**: 'Tell me about Messi'\n"
-                       "- ⚔️ **Comparisons**: 'Compare Messi vs Ronaldo'\n"
-                       "- 🏥 **Injury Risk**: 'Injury risk for Neymar'\n"
-                       "- 🔋 **Fatigue**: 'Fatigue report for Hazard'\n"
-                       "- 📈 **Rankings**: 'Top 10 players by attack'\n"
-                       "- 📉 **Trends**: 'Show declining players'\n"
-                       "- ⚽ **Predictions**: 'Predict Barcelona vs Real Madrid'\n"
-                       "- 🧑‍🏫 **Coaching**: 'Coaching plan for Ronaldo'\n"
-                       "- 🏟️ **Lineup**: 'Recommend lineup for Barcelona'\n"
-                       "- 🚨 **Anomalies**: 'Detect anomalies'\n"
-                       "- 📊 **Stats**: 'Show overall statistics'\n",
-            'suggestions': ["Top 10 players", "Show stats overview", "Detect anomalies", "Show declining players"]
-        }
+        # Step 2: Try to find a player name in the message
+        player_id = self._find_player_id_from_text(message)
+        if player_id:
+            return self._handle_player_profile(entities, message)
+
+        # Step 3: Check context — maybe it's a follow-up
+        ctx = self.context.get_context_summary()
+        if ctx['last_player'] and ctx['last_intent']:
+            msg = message.lower()
+            if any(w in msg for w in ['injury', 'risk', 'hurt', 'health']):
+                return self._handle_injury_risk(entities, ctx['last_player'])
+            if any(w in msg for w in ['fatigue', 'tired', 'rest', 'energy']):
+                return self._handle_fatigue(entities, ctx['last_player'])
+            if any(w in msg for w in ['coaching', 'improve', 'train', 'develop', 'better']):
+                return self._handle_coaching(entities, ctx['last_player'])
+            if any(w in msg for w in ['compare', 'vs', 'versus']):
+                return self._handle_compare(entities, message)
+
+        # Step 4: Generate a helpful conversational response
+        return self._generate_conversational_response(message)
 
     # ─────────── HELPERS ───────────
 
     def _extract_player_name(self, entities, message):
-        for e in entities:
-            if e and not e.isdigit():
-                return e.strip().rstrip('?.,! ')
-        # Try to find a name in message
+        # From dict entities
+        if isinstance(entities, dict):
+            for key in ('entity1', 'player_name'):
+                if entities.get(key):
+                    return entities[key].strip().rstrip('?.,! ')
+        # From tuple entities
+        elif isinstance(entities, (tuple, list)):
+            for e in entities:
+                if e and not str(e).isdigit():
+                    return str(e).strip().rstrip('?.,! ')
+        # From context
+        if self.context.last_player:
+            # Check if message is a follow-up about the same player
+            msg_lower = message.lower()
+            if any(w in msg_lower for w in ['his', 'her', 'him', 'this player', 'that player']):
+                return self.context.last_player
+        # Try to find capitalized names in message
+        stop = {'the','who','what','how','why','show','tell','about','for','with','and','from',
+                'tell','me','is','are','at','of','risk','injury','compare','can','will',
+                'predict','recommend','coaching','plan','fatigue','top','best','players'}
         words = message.split()
-        name_parts = [w for w in words if len(w) > 2 and w[0].isupper() and w.lower() not in
-                     {'the', 'who', 'what', 'how', 'why', 'show', 'tell', 'about', 'for', 'with', 'and', 'from'}]
-        return ' '.join(name_parts) if name_parts else message.strip()
+        name_parts = [w for w in words if len(w) > 1 and w[0].isupper() and w.lower() not in stop]
+        return ' '.join(name_parts) if name_parts else (self.context.last_player or message.strip())
 
     def _extract_team_name(self, message):
+        teams = self.etl.gold['dim_team']
+        msg_lower = message.lower()
+        for _, t in teams.iterrows():
+            if t['team_long_name'].lower() in msg_lower or t['team_short_name'].lower() in msg_lower:
+                return t['team_long_name']
+        # Fallback: capitalized words
+        stop = {'team','show','tell','about','the','analysis','info','lineup','recommend',
+                'starting','suggest','optimal','best','formation','for','predict','vs'}
         words = message.split()
-        name_parts = [w for w in words if w[0].isupper() and w.lower() not in
-                     {'team', 'show', 'tell', 'about', 'the', 'analysis', 'info'}]
+        name_parts = [w for w in words if w[0:1].isupper() and w.lower() not in stop]
         return ' '.join(name_parts) if name_parts else None
 
     def _find_player_id(self, name):
         if not name:
             return None
         perf = self.etl.gold['fact_player_performance']
+        # Exact match first
+        exact = perf[perf['player_name'].str.lower() == name.lower()]
+        if not exact.empty:
+            return int(exact.iloc[0]['player_api_id'])
+        # Contains match
         matches = perf[perf['player_name'].str.lower().str.contains(name.lower(), na=False)]
         if matches.empty:
             return None
         return int(matches.iloc[0]['player_api_id'])
+
+    def _find_player_id_from_text(self, text):
+        """Try to find any player name mentioned in freeform text"""
+        perf = self.etl.gold['fact_player_performance']
+        text_lower = text.lower()
+        # Check against all player names
+        for _, p in perf.iterrows():
+            pname = str(p['player_name']).lower()
+            if len(pname) > 3 and pname in text_lower:
+                return int(p['player_api_id'])
+        # Try word-by-word
+        words = text.split()
+        for w in words:
+            if len(w) > 3 and w[0].isupper():
+                matches = perf[perf['player_name'].str.lower().str.contains(w.lower(), na=False)]
+                if len(matches) == 1:
+                    return int(matches.iloc[0]['player_api_id'])
+        return None
+
+    def _generate_conversational_response(self, message):
+        """Generate a natural conversational response for unrecognized queries"""
+        msg_lower = message.lower()
+
+        # Sports-related but not data-specific
+        if any(w in msg_lower for w in ['football', 'soccer', 'sport', 'game', 'match', 'league', 'champion']):
+            return {
+                'type': 'conversation',
+                'message': "Great question about football! 🤖 While I specialize in analyzing the player and match data in our database, I can help you with specific queries.\n\nTry asking me about:\n- A specific player: *\"Tell me about Messi\"*\n- Rankings: *\"Who are the best attackers?\"*\n- Predictions: *\"Predict Barcelona vs Real Madrid\"*\n\nWhat would you like to explore?",
+                'suggestions': ['Top 10 players', 'Best attacking players', 'Show stats overview', 'Detect anomalies']
+            }
+
+        # General question
+        ctx = self.context.get_context_summary()
+        context_hints = []
+        if ctx['last_player']:
+            context_hints.append(f"Analyze {ctx['last_player']}")
+            context_hints.append(f"Injury risk for {ctx['last_player']}")
+        context_hints.extend(['Top 10 players', 'Show stats overview', 'Who are the best attackers?'])
+
+        return {
+            'type': 'conversation',
+            'message': f"I appreciate the question! 🤖 As your AI sports analyst, I'm best at analyzing player data, predicting injuries, comparing players, and providing strategic insights.\n\nHere are some things you can ask me:\n- **\"Who are the best attacking players?\"**\n- **\"Is Neymar at risk of injury?\"**\n- **\"Compare Messi and Ronaldo\"**\n- **\"Which players are declining?\"**\n- **\"Recommend a lineup for Barcelona\"**\n\nI also support follow-up questions — just ask naturally!",
+            'suggestions': context_hints[:5]
+        }
 
     def _player_not_found(self, name):
         perf = self.etl.gold['fact_player_performance']
