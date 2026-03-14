@@ -6,22 +6,32 @@ import {
     PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6'];
+const COLORS = ['#4f6ef7', '#22c55e', '#f59e0b', '#ef4444', '#6c5ce7', '#3b82f6'];
 const HISTORY_KEY = 'athleteiq_chat_history';
+const getChartTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        tooltip: { background: isDark ? '#1c1e2a' : '#ffffff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e5ed', borderRadius: 8, fontSize: 12, color: isDark ? '#f0f1f5' : '#1a1d26' },
+        grid: isDark ? 'rgba(255,255,255,0.06)' : '#e8eaef',
+        axis: isDark ? '#6b7084' : '#8b91a5',
+        polar: isDark ? 'rgba(255,255,255,0.08)' : '#e8eaef',
+    };
+};
 
 function RenderChart({ chart }) {
     if (!chart || !chart.data || chart.data.length === 0) return null;
     const h = 220;
+    const ct = getChartTheme();
     if (chart.type === 'radar') {
         return (
             <div className="chat-chart">
                 <div className="chat-chart-title">{chart.title}</div>
                 <ResponsiveContainer width="100%" height={h}>
                     <RadarChart data={chart.data}>
-                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                        <PolarAngleAxis dataKey="skill" stroke="#94a3b8" fontSize={10} />
+                        <PolarGrid stroke={ct.polar} />
+                        <PolarAngleAxis dataKey="skill" stroke={ct.axis} fontSize={10} />
                         <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                        <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} strokeWidth={2} />
+                        <Radar dataKey="value" stroke="#4f6ef7" fill="#4f6ef7" fillOpacity={0.25} strokeWidth={2} />
                     </RadarChart>
                 </ResponsiveContainer>
             </div>
@@ -33,10 +43,10 @@ function RenderChart({ chart }) {
                 <div className="chat-chart-title">{chart.title}</div>
                 <ResponsiveContainer width="100%" height={h + 30}>
                     <RadarChart data={chart.data}>
-                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                        <PolarAngleAxis dataKey="skill" stroke="#94a3b8" fontSize={10} />
+                        <PolarGrid stroke={ct.polar} />
+                        <PolarAngleAxis dataKey="skill" stroke={ct.axis} fontSize={10} />
                         <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                        <Radar name={chart.player1_name} dataKey="player1" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} />
+                        <Radar name={chart.player1_name} dataKey="player1" stroke="#4f6ef7" fill="#4f6ef7" fillOpacity={0.15} />
                         <Radar name={chart.player2_name} dataKey="player2" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
                         <Legend />
                     </RadarChart>
@@ -51,11 +61,11 @@ function RenderChart({ chart }) {
                 <div className="chat-chart-title">{chart.title}</div>
                 <ResponsiveContainer width="100%" height={h}>
                     <BarChart data={chart.data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey={Object.keys(chart.data[0])[0]} stroke="#64748b" fontSize={9} angle={-20} textAnchor="end" height={45} />
-                        <YAxis stroke="#64748b" fontSize={10} />
-                        <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                        <Bar dataKey={dk} fill="#6366f1" radius={[4, 4, 0, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                        <XAxis dataKey={Object.keys(chart.data[0])[0]} stroke={ct.axis} fontSize={9} angle={-20} textAnchor="end" height={45} />
+                        <YAxis stroke={ct.axis} fontSize={10} />
+                        <Tooltip contentStyle={ct.tooltip} />
+                        <Bar dataKey={dk} fill="#4f6ef7" radius={[4, 4, 0, 0]} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -71,7 +81,7 @@ function RenderChart({ chart }) {
                             label={({ name, value }) => `${name}: ${value}`}>
                             {chart.data.map((e, i) => <Cell key={i} fill={e.color || COLORS[i % COLORS.length]} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
+                        <Tooltip contentStyle={ct.tooltip} />
                     </PieChart>
                 </ResponsiveContainer>
             </div>
@@ -84,10 +94,10 @@ function RenderChart({ chart }) {
                 <div className="chat-chart-title">{chart.title}</div>
                 <ResponsiveContainer width="100%" height={h}>
                     <LineChart data={chart.data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="date" stroke="#64748b" fontSize={9} />
-                        <YAxis stroke="#64748b" fontSize={10} />
-                        <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                        <XAxis dataKey="date" stroke={ct.axis} fontSize={9} />
+                        <YAxis stroke={ct.axis} fontSize={10} />
+                        <Tooltip contentStyle={ct.tooltip} />
                         {keys.map((key, i) => <Line key={key} type="monotone" dataKey={key} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 2 }} name={key.replace(/_/g, ' ')} />)}
                         <Legend />
                     </LineChart>

@@ -5,7 +5,16 @@ import {
     PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const COLORS = ['#4f6ef7', '#6c5ce7', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#a78bfa'];
+const getChartTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        tooltip: { background: isDark ? '#1c1e2a' : '#ffffff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e5ed', borderRadius: 8, color: isDark ? '#f0f1f5' : '#1a1d26' },
+        grid: isDark ? 'rgba(255,255,255,0.06)' : '#e8eaef',
+        axis: isDark ? '#6b7084' : '#8b91a5',
+        polar: isDark ? 'rgba(255,255,255,0.08)' : '#e8eaef',
+    };
+};
 
 export default function CoachDashboard() {
     const [data, setData] = useState(null);
@@ -31,6 +40,7 @@ export default function CoachDashboard() {
     if (!data) return <div className="loading-container"><div className="spinner" /><p>Loading coach dashboard...</p></div>;
 
     const summary = data.summary || {};
+    const ct = getChartTheme();
     const perfDistData = Object.entries(data.performance_distribution || {}).map(([k, v]) => ({ name: k, value: v }));
     const compData = Object.entries(data.squad_composition || {}).map(([k, v]) => ({ name: k, value: v }));
 
@@ -99,10 +109,10 @@ export default function CoachDashboard() {
                         </div>
                         <ResponsiveContainer width="100%" height={240}>
                             <RadarChart data={radarData}>
-                                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                <PolarAngleAxis dataKey="skill" stroke="#94a3b8" fontSize={11} />
+                                <PolarGrid stroke={ct.polar} />
+                                <PolarAngleAxis dataKey="skill" stroke={ct.axis} fontSize={11} />
                                 <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                                <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
+                                <Radar dataKey="value" stroke="#4f6ef7" fill="#4f6ef7" fillOpacity={0.3} strokeWidth={2} />
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
@@ -156,10 +166,10 @@ export default function CoachDashboard() {
                     {perfDistData.length > 0 && (
                         <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={perfDistData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                <XAxis dataKey="name" stroke={ct.axis} fontSize={11} />
+                                <YAxis stroke={ct.axis} fontSize={11} />
+                                <Tooltip contentStyle={ct.tooltip} />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                     {perfDistData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Bar>
@@ -178,7 +188,7 @@ export default function CoachDashboard() {
                                     label={({ name, value }) => `${name.split(' ')[0]}: ${value}`}>
                                     {compData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }} />
+                                <Tooltip contentStyle={ct.tooltip} />
                             </PieChart>
                         </ResponsiveContainer>
                     )}

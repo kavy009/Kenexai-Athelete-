@@ -3,11 +3,11 @@ ETL Pipeline - Medallion Architecture (Bronze → Silver → Gold)
 Athlete Performance Analytics & Injury Risk Prediction
 """
 import sqlite3
-import pandas as pd
-import numpy as np
-from scipy import stats
+import pandas as pd  #type:ignore
+import numpy as np   #type:ignore
 import os
 import json
+from typing import Any, Dict
 from datetime import datetime, timedelta
 import random
 
@@ -15,10 +15,10 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database.sql
 
 class ETLPipeline:
     def __init__(self):
-        self.bronze = {}
-        self.silver = {}
-        self.gold = {}
-        self.data_quality_report = {}
+        self.bronze: Dict[str, Any] = {}
+        self.silver: Dict[str, Any] = {}
+        self.gold: Dict[str, Any] = {}
+        self.data_quality_report: Dict[str, Any] = {}
 
     # ──────────────── BRONZE LAYER ────────────────
     def extract_bronze(self):
@@ -64,7 +64,9 @@ class ETLPipeline:
             lower = Q1 - 1.5 * IQR
             upper = Q3 + 1.5 * IQR
             outlier_count = ((pa[col] < lower) | (pa[col] > upper)).sum()
-            outlier_info[col] = {'lower': round(lower, 2), 'upper': round(upper, 2), 'outliers': int(outlier_count)}
+            lower_val: float = float(lower)
+            upper_val: float = float(upper)
+            outlier_info[col] = {'lower': int(lower_val * 100) / 100, 'upper': int(upper_val * 100) / 100, 'outliers': int(outlier_count)}
             pa[col] = pa[col].clip(lower=lower, upper=upper)
         self.data_quality_report['outliers'] = outlier_info
         self.silver['Player_Attributes'] = pa
@@ -179,16 +181,16 @@ class ETLPipeline:
             sprint_speed = p.get('sprint_speed', 60) if pd.notna(p.get('sprint_speed')) else 60
 
             # Simulate wearable data with correlations to player attributes
-            avg_heart_rate = max(55, min(95, np.random.normal(72 + (age - 25) * 0.5, 8)))
-            max_heart_rate = max(160, min(210, np.random.normal(200 - age * 0.5, 10)))
-            sprint_distance = max(0.5, np.random.normal(sprint_speed / 10, 1.5))
-            total_distance = max(5, np.random.normal(9 + stamina / 30, 1.5))
-            training_load = max(200, np.random.normal(500 + (100 - stamina) * 2, 80))
-            fatigue_index = max(1, min(10, np.random.normal(5 + (age - 25) * 0.15 + (100 - stamina) * 0.03, 1.5)))
-            sleep_hours = max(4, min(10, np.random.normal(7.5 - (age - 25) * 0.05, 1)))
+            avg_heart_rate: float = float(max(55, min(95, np.random.normal(72 + (age - 25) * 0.5, 8))))
+            max_heart_rate: float = float(max(160, min(210, np.random.normal(200 - age * 0.5, 10))))
+            sprint_distance: float = float(max(0.5, np.random.normal(sprint_speed / 10, 1.5)))
+            total_distance: float = float(max(5, np.random.normal(9 + stamina / 30, 1.5)))
+            training_load: float = float(max(200, np.random.normal(500 + (100 - stamina) * 2, 80)))
+            fatigue_index: float = float(max(1, min(10, np.random.normal(5 + (age - 25) * 0.15 + (100 - stamina) * 0.03, 1.5))))
+            sleep_hours: float = float(max(4, min(10, np.random.normal(7.5 - (age - 25) * 0.05, 1))))
             matches_last_30d = max(0, int(np.random.normal(4, 1.5)))
             previous_injuries = max(0, int(np.random.exponential(1.5 + (age - 25) * 0.1)))
-            recovery_time = max(12, np.random.normal(36 + (age - 25) * 0.8, 8))
+            recovery_time: float = float(max(12, np.random.normal(36 + (age - 25) * 0.8, 8)))
 
             # Injury risk based on realistic factors
             risk_score = (
@@ -206,16 +208,16 @@ class ETLPipeline:
 
             records.append({
                 'player_api_id': p['player_api_id'],
-                'avg_heart_rate': round(avg_heart_rate, 1),
-                'max_heart_rate': round(max_heart_rate, 1),
-                'sprint_distance_km': round(sprint_distance, 2),
-                'total_distance_km': round(total_distance, 2),
-                'training_load': round(training_load, 1),
-                'fatigue_index': round(fatigue_index, 2),
-                'sleep_hours': round(sleep_hours, 1),
+                'avg_heart_rate': int(avg_heart_rate * 10) / 10,
+                'max_heart_rate': int(max_heart_rate * 10) / 10,
+                'sprint_distance_km': int(sprint_distance * 100) / 100,
+                'total_distance_km': int(total_distance * 100) / 100,
+                'training_load': int(training_load * 10) / 10,
+                'fatigue_index': int(fatigue_index * 100) / 100,
+                'sleep_hours': int(sleep_hours * 10) / 10,
                 'matches_last_30d': matches_last_30d,
                 'previous_injuries': previous_injuries,
-                'recovery_time_hours': round(recovery_time, 1),
+                'recovery_time_hours': int(recovery_time * 10) / 10,
                 'injury_risk': injury_risk
             })
 
@@ -236,7 +238,7 @@ class ETLPipeline:
                 col_total = len(df[col])
                 col_quality[col] = {
                     'missing': col_missing,
-                    'completeness': round((1 - col_missing / col_total) * 100, 1) if col_total > 0 else 100,
+                    'completeness': int((1 - col_missing / col_total) * 1000) / 10 if col_total > 0 else 100,
                     'dtype': str(df[col].dtype),
                     'unique': int(df[col].nunique())
                 }
@@ -246,7 +248,7 @@ class ETLPipeline:
                 'columns': int(df.shape[1]),
                 'total_cells': int(total),
                 'missing_cells': int(missing),
-                'completeness': round((1 - missing / total) * 100, 1) if total > 0 else 100,
+                'completeness': int((1 - missing / total) * 1000) / 10 if total > 0 else 100,
                 'duplicates': int(duplicates),
                 'column_quality': col_quality
             }
@@ -293,34 +295,48 @@ class ETLPipeline:
         eda['top_players'] = top_players
 
         # Summary stats
+        avg_rating = float(pa['overall_rating'].mean())
+        avg_age = float(pa['age'].mean())
+        avg_perf = float(pa['performance_score'].mean())
+        max_perf = float(pa['performance_score'].max())
+        min_perf = float(pa['performance_score'].min())
         eda['summary_stats'] = {
             'total_players': int(len(pa)),
-            'avg_rating': round(float(pa['overall_rating'].mean()), 1),
-            'avg_age': round(float(pa['age'].mean()), 1),
-            'avg_performance': round(float(pa['performance_score'].mean()), 1),
-            'max_performance': round(float(pa['performance_score'].max()), 1),
-            'min_performance': round(float(pa['performance_score'].min()), 1)
+            'avg_rating': int(avg_rating * 10) / 10,
+            'avg_age': int(avg_age * 10) / 10,
+            'avg_performance': int(avg_perf * 10) / 10,
+            'max_performance': int(max_perf * 10) / 10,
+            'min_performance': int(min_perf * 10) / 10
         }
 
         # Match stats
         matches = self.gold['fact_match']
+        avg_goals: float = float(matches['total_goals'].mean())
+        result_counts = matches['result'].value_counts()
+        total_matches_count = len(matches)
+        home_win: float = float(result_counts.get('Home Win', 0)) / total_matches_count * 100 if total_matches_count > 0 else 0.0
+        draw: float = float(result_counts.get('Draw', 0)) / total_matches_count * 100 if total_matches_count > 0 else 0.0
+        away_win: float = float(result_counts.get('Away Win', 0)) / total_matches_count * 100 if total_matches_count > 0 else 0.0
         eda['match_stats'] = {
             'total_matches': int(len(matches)),
-            'avg_goals_per_match': round(float(matches['total_goals'].mean()), 2),
-            'home_win_pct': round(float((matches['result'] == 'Home Win').mean() * 100), 1),
-            'draw_pct': round(float((matches['result'] == 'Draw').mean() * 100), 1),
-            'away_win_pct': round(float((matches['result'] == 'Away Win').mean() * 100), 1),
-            'goals_by_season': matches.groupby('season')['total_goals'].mean().round(2).to_dict()
+            'avg_goals_per_match': int(avg_goals * 100) / 100,
+            'home_win_pct': int(home_win * 10) / 10,
+            'draw_pct': int(draw * 10) / 10,
+            'away_win_pct': int(away_win * 10) / 10,
+            'goals_by_season': {k: int(float(v) * 100) / 100 for k, v in matches.groupby('season')['total_goals'].mean().items()}
         }
 
         # Injury risk overview
         injury = self.gold['fact_injury_risk']
+        high_risk_pct = float(injury['injury_risk'].mean() * 100)
+        avg_fatigue = float(injury['fatigue_index'].mean())
+        avg_tl = float(injury['training_load'].mean())
         eda['injury_overview'] = {
             'high_risk_count': int(injury['injury_risk'].sum()),
-            'low_risk_count': int((injury['injury_risk'] == 0).sum()),
-            'high_risk_pct': round(float(injury['injury_risk'].mean() * 100), 1),
-            'avg_fatigue': round(float(injury['fatigue_index'].mean()), 2),
-            'avg_training_load': round(float(injury['training_load'].mean()), 1)
+            'low_risk_count': int(injury['injury_risk'].value_counts().get(0, 0)),
+            'high_risk_pct': int(high_risk_pct * 10) / 10,
+            'avg_fatigue': int(avg_fatigue * 100) / 100,
+            'avg_training_load': int(avg_tl * 10) / 10
         }
 
         return eda
